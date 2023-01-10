@@ -1,0 +1,150 @@
+# local government area (lga) summary
+
+student_total= student_data["student_name"].count()
+school_total = school_data["school_name"].count()
+budget_total = school_data["budget"].sum()
+average_maths_score = student_data["maths_score"].mean()
+average_reading_score = student_data["reading_score"].mean()
+percentage_pass_maths= len(student_data[student_data["maths_score"]>=50])/len(student_data)*100
+percentage_pass_reading= len(student_data[student_data["reading_score"]>=50])/len(student_data)*100
+percentage_pass_reading_and_maths= len(student_data[(student_data["maths_score"]>=50)&(student_data["reading_score"]>=50)])/len(student_data)*100
+
+Area_Summary = pd.DataFrame([school_total, student_total,budget_total,average_maths_score,average_reading_score,percentage_pass_maths, percentage_pass_reading, percentage_pass_reading_and_maths]).T
+Area_Summary.columns = ["Total Schools", "Total Students","Total Budget", "Average Maths Score", "Average Reading Score","% Passing Maths", "% Passing Reading", "% Overall Passing"]
+
+Area_Summary
+
+# school summary
+
+Bailey_Highschool_Type= school_data_complete[school_data_complete["school_name"]=="Bailey High School"]["type"].unique()[0]
+Bailey_Highschool_student_count= school_data_complete[school_data_complete["school_name"]=="Bailey High School"]["student_name"].count()
+Bailey_Highschool_Budget= school_data_complete[school_data_complete["school_name"]=="Bailey High School"]["budget"].unique()[0]
+Bailey_Highschool_Per_Student_Budget= Bailey_Highschool_Budget/Bailey_Highschool_student_count
+Bailey_Highschool_Maths_Score= school_data_complete[school_data_complete["school_name"]=="Bailey High School"]["maths_score"].mean()
+Bailey_Highschool_Reading_Score= school_data_complete[school_data_complete["school_name"]=="Bailey High School"]["reading_score"].mean()
+Bailey_Highschool_Maths_Passed_Percent= (len(school_data_complete[(school_data_complete["school_name"]=="Bailey High School")&(school_data_complete["maths_score"]>=50)])/Bailey_Highschool_student_count)*100
+Bailey_Highschool_Reading_Passed_Percent= (len(school_data_complete[(school_data_complete["school_name"]=="Bailey High School")&(school_data_complete["reading_score"]>=50)])/Bailey_Highschool_student_count)*100
+Bailey_Highschool_Reading_and_Maths_Passed_Percent= (len(school_data_complete[(school_data_complete["school_name"]=="Bailey High School")&(school_data_complete["maths_score"]>=50)&(school_data_complete["reading_score"]>=50)])/Bailey_Highschool_student_count)*100
+
+per_school_summary= pd.DataFrame()
+for school in school_data["school_name"].sort_values():
+    school_type = school_data_complete[school_data_complete["school_name"]==school]["type"].unique()[0]
+    school_student_count = school_data_complete[school_data_complete["school_name"]==school]["student_name"].count()
+    school_budget= school_data_complete[school_data_complete["school_name"]==school]["budget"].unique()[0] 
+    school_budget_per_student =school_budget/school_student_count
+    school_maths_score = school_data_complete[school_data_complete["school_name"]==school]["maths_score"].mean()
+    school_reading_score = school_data_complete[school_data_complete["school_name"]==school]["reading_score"].mean()
+    school_maths_passed_percent = (len(school_data_complete[(school_data_complete["school_name"]==school)&(school_data_complete["maths_score"]>=50)])/school_student_count)*100
+    school_reading_passed_percent = (len(school_data_complete[(school_data_complete["school_name"]==school)&(school_data_complete["reading_score"]>=50)])/school_student_count)*100
+    school_reading_and_maths_passed_percent = (len(school_data_complete[(school_data_complete["school_name"]==school)&(school_data_complete["maths_score"]>=50)&(school_data_complete["reading_score"]>=50)])/school_student_count)*100
+    tempdf=pd.DataFrame([school,school_type,school_student_count,school_budget,school_budget_per_student,school_maths_score,school_reading_score,school_maths_passed_percent,school_reading_passed_percent,school_reading_and_maths_passed_percent]).T
+    per_school_summary=pd.concat([per_school_summary,tempdf])
+
+per_school_summary.columns = ["School Name","School Type","Total Students","Total School_Budget","Per Student Budget","Average Maths Score", "Average Reading Score", "% Passing Maths", "% Passing Reading", "% Overall Passing"]
+
+per_school_summary.set_index("School Name",inplace=True)
+
+per_school_summary
+
+# top performing schools (by % overall passing)
+
+Top_schools= per_school_summary.sort_values(by = "% Overall Passing",ascending=False)
+Top_schools.head(5)
+
+# bottom performing schools (by% overall passing)
+
+Bottom_schools= per_school_summary.sort_values(by = "% Overall Passing",ascending=True)
+Bottom_schools.head(5)
+
+# math scores by year
+
+lst = []
+maths_scores_by_year= pd.DataFrame()
+for school in school_data["school_name"].sort_values():
+    lst.append(school)
+    avgmathscore= school_data_complete[school_data_complete["school_name"]== school].groupby("year").mean()["maths_score"]
+    tempdf=pd.DataFrame([avgmathscore])
+    maths_scores_by_year=pd.concat([maths_scores_by_year,tempdf])
+    
+ maths_scores_by_year.index=lst
+ 
+ maths_scores_by_year.columns=["Year 9", "Year 10", "Year 11","Year 12"]
+ 
+ maths_scores_by_year
+ 
+ # reading score by year
+ 
+lst = []
+reading_scores_by_year= pd.DataFrame()
+for school in school_data["school_name"].sort_values():
+    lst.append(school)
+    avgreadingscore= school_data_complete[school_data_complete["school_name"]== school].groupby("year").mean()["reading_score"]
+    tempdf=pd.DataFrame([avgreadingscore])
+    reading_scores_by_year=pd.concat([reading_scores_by_year,tempdf])
+ 
+reading_scores_by_year.index= lst
+ 
+reading_scores_by_year.columns=["Year 9", "Year 10","Year 11", "Year 12"] 
+ 
+reading_scores_by_year
+ 
+# scores by school spending
+ 
+school_spending_df = per_school_summary
+spending_summary = school_spending_df
+ 
+spending_bins = [0, 585, 630, 645, 680]
+labels = ["<$585", "$585-630", "$630-645", "$645-680"]
+
+school_spending_df["Spending Ranges (Per Student)"] = pd.cut(school_spending_df["Per Student Budget"], spending_bins, labels=labels, include_lowest=True)
+
+spending_maths_scores = school_spending_df.groupby(["Spending Ranges (Per Student)"]).mean()["Average Maths Score"]
+spending_reading_scores = school_spending_df.groupby(["Spending Ranges (Per Student)"]).mean()["Average Reading Score"]
+spending_passing_maths = school_spending_df.groupby(["Spending Ranges (Per Student)"]).mean()["% Passing Maths"]
+spending_passing_reading = school_spending_df.groupby(["Spending Ranges (Per Student)"]).mean()["% Passing Reading"]
+overall_passing_spending = school_spending_df.groupby(["Spending Ranges (Per Student)"]).mean()["% Overall Passing"]
+
+spending_summary = pd.DataFrame ()
+for school in school_data['school_name']:
+    tempdf=pd.DataFrame ([spending_maths_scores, spending_reading_scores,spending_passing_maths,spending_passing_reading,overall_passing_spending])
+    spending_summary=pd.concat([spending_summary, tempdf])
+ 
+spending_summary.T
+
+# scores by school size
+
+school_size_df = per_school_summary
+size_summary = school_size_df
+
+school_size_bins = [0, 1000, 2000, 5000]    
+labels = ["Small (<1000)", "Medium (1000-2000)", "Large (2000-5000)"]
+
+school_size_df["Student Count"] = pd.cut(school_size_df["Student Count"], school_size_bins, labels=labels, include_lowest=True)
+
+size_summary
+
+# scores by school type
+
+school_type_df = per_school_summary
+type_summary = school_type_df
+
+spending_maths_scores = school_spending_df.groupby(["School Type"]).mean()["Average Maths Score"]
+spending_reading_scores = school_spending_df.groupby(["School Type"]).mean()["Average Reading Score"]
+spending_passing_maths = school_spending_df.groupby(["School Type"]).mean()["% Passing Maths"]
+spending_passing_reading = school_spending_df.groupby(["School Type"]).mean()["% Passing Reading"]
+overall_passing_spending = school_spending_df.groupby(["School Type"]).mean()["% Overall Passing"]
+
+type_summary = pd.DataFrame ()
+for school in school_data['school_name']:
+    tempdf=pd.DataFrame ([spending_maths_scores, spending_reading_scores,spending_passing_maths,spending_passing_reading,overall_passing_spending])
+    type_summary=pd.concat([type_summary, tempdf])
+
+type_summary.T
+
+
+
+
+
+    
+ 
+ 
